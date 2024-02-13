@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.management.product.model.dao.BookDAO">
+
+    <resultMap type="com.management.product.model.dto.BookDTO" id="bookResultMap">
+        <id property="bookCode" column="BOOK_CODE"/>
+        <result property="bookName" column="BOOK_NAME"/>
+        <result property="author" column="AUTHOR"/>
+        <result property="bookCategory" column="BOOK_CATEGORY"/>
+        <result property="seasonCode" column="SEASON_CODE"/>
+    </resultMap>
+
+    <!-- 책 전체 조회 -->
+    <select id="selectAllBookList" resultMap="bookResultMap">
+        SELECT
+            BOOK_CODE
+            ,BOOK_NAME
+            ,AUTHOR
+            ,BOOK_CATEGORY
+            ,SEASON_CODE
+        FROM  BOOK
+        ORDER BY BOOK_CODE
+    </select>
+
+    <!-- 책 부분 조회 -->
+    <select id="selectBookByCondition" parameterType="com.common.Condition" resultMap="bookResultMap">
+        SELECT
+            *
+        FROM  BOOK
+        <where>
+            <choose>
+                <when test="option != null and option eq 'bookName'">
+                    BOOK_NAME LIKE CONCAT('%', #{ value }, '%')
+                </when>
+                <when test="option != null and option eq 'author'">
+                    AUTHOR LIKE CONCAT('%', #{ value }, '%')
+                </when>
+                <when test="option != null and option eq 'bookCategory'">
+                    BOOK_CATEGORY LIKE CONCAT('%', #{ value }, '%')
+                </when>
+            </choose>
+        </where>
+        ORDER BY BOOK_CODE
+    </select>
+
+    <!-- 계철책방 이벤트 -->
+    <select id="seasonEventUserList" resultType="com.management.product.model.dto.SeasonEventDTO">
+        SELECT
+            s.event_code AS eventCode,
+            s.user_code AS userCode,
+            u.user_name,
+            s.season_code AS seasonCode,
+            ss.season_name,
+            s.book_code AS bookCode,
+            b.book_name
+        FROM  SEASON_EVENT s
+        JOIN USER u USING (user_code)
+        JOIN BOOK b USING (book_code)
+        JOIN SEASON ss ON (s.season_code = ss.season_code)
+        ORDER BY s.EVENT_CODE
+    </select>
+
+    <select id="searchUserByUserName" resultType="com.management.product.model.dto.UserDTO" parameterType="String">
+        SELECT
+            user_code AS userCode,
+            user_season_code AS userSeasonCode
+        FROM
+            USER
+        WHERE
+            user_name = #{ userName }
+    </select>
+
+    <select id="eventBookByUsername" resultMap="bookResultMap" parameterType="int">
+        SELECT  BOOK_CODE
+             ,BOOK_NAME
+             ,AUTHOR
+             ,BOOK_CATEGORY
+             ,SEASON_CODE
+        FROM  BOOK
+        WHERE season_code = #{ userSeasonCode }
+        ORDER BY RAND()
+                limit 1
+    </select>
+
+    <insert id="insertEventBook" parameterType="java.util.Map">
+        INSERT INTO
+            season_event(season_code, book_code, user_code)
+        VALUES
+            (#{ seasonCode }, #{ bookCode }, #{ userCode })
+    </insert>
+
+    <!-- 회원 관리 -->
+    <insert id="insertUser" parameterType="com.management.product.model.dto.UserDTO">
+        INSERT INTO
+            user(user_name, user_age, user_phone, user_season_code)
+        VALUES
+            (#{ userName }, #{ userAge }, #{ userPhone }, #{ userSeasonCode })
+    </insert>
+
+    <update id="updateUser" parameterType="com.management.product.model.dto.UserDTO">
+        UPDATE
+            user
+        SET
+            user_name = #{ userName },
+            user_age = #{ userAge },
+            user_phone = #{ userPhone },
+            user_season_code = #{ userSeasonCode }
+        WHERE
+            user_code = #{ userCode }
+    </update>
+
+    <delete id="deleteUser" parameterType="java.util.Map">
+        DELETE FROM
+            user
+        WHERE
+            user_code = #{ userCode }
+    </delete>
+
+    <!-- 책 관리 -->
+    <insert id="insertBook" parameterType="com.management.product.model.dto.BookDTO">
+        INSERT INTO
+            book(book_name, author, book_category, season_code)
+        VALUES
+            (#{ bookName }, #{ author }, #{ bookCategory }, #{ seasonCode })
+    </insert>
+
+    <update id="updateBook" parameterType="com.management.product.model.dto.BookDTO">
+        UPDATE
+            book
+        SET
+            book_name = #{ bookName },
+            author = #{ author },
+            book_category = #{ bookCategory },
+            season_code = #{ seasonCode }
+        WHERE
+            book_code = #{ bookCode }
+    </update>
+
+    <delete id="deleteBook" parameterType="java.util.Map">
+        DELETE FROM
+            book
+        WHERE
+            book_code = #{ bookCode }
+    </delete>
+
+</mapper>
